@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Симуляция радиоактивного распада</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 0;
+        }
+
+        header {
+            background-color: #4caf50;
+            color: white;
+            padding: 20px;
+        }
+
+        main {
+            margin: 20px;
+        }
+
+        .simulation-container {
+            position: relative;
+            width: 90%;
+            height: 300px;
+            border: 2px solid #4caf50;
+            margin: 20px auto;
+            background-color: #e8f5e9;
+            overflow: hidden;
+        }
+
+        .atom {
+            width: 8px;
+            height: 8px;
+            background-color: #ff5722;
+            border-radius: 50%;
+            position: absolute;
+        }
+
+        .controls {
+            margin: 20px;
+        }
+
+        .slider {
+            width: 80%;
+            margin: 10px;
+        }
+
+        .info {
+            font-size: 18px;
+            margin-top: 20px;
+        }
+
+        canvas {
+            margin-top: 20px;
+            border: 1px solid #ccc;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Симуляция радиоактивного распада</h1>
+        <p>Наблюдайте за случайным распадом атомов и зависимостью их количества от времени.</p>
+    </header>
+    <main>
+        <div class="simulation-container" id="simulation"></div>
+        
+        <div class="controls">
+            <label for="halfLifeSlider">Время полураспада (T½): </label>
+            <input type="range" id="halfLifeSlider" class="slider" min="1" max="10" value="5">
+            <span id="halfLifeValue">5</span> секунд
+        </div>
+
+        <button id="resetButton">Перезапустить</button>
+
+        <div class="info">
+            <p>Количество оставшихся атомов: <span id="remainingAtoms">0</span></p>
+        </div>
+
+        <canvas id="graph" width="600" height="300"></canvas>
+    </main>
+
+    <script>
+        const simulation = document.getElementById('simulation');
+        const halfLifeSlider = document.getElementById('halfLifeSlider');
+        const halfLifeValue = document.getElementById('halfLifeValue');
+        const resetButton = document.getElementById('resetButton');
+        const remainingAtoms = document.getElementById('remainingAtoms');
+        const graphCanvas = document.getElementById('graph');
+        const ctx = graphCanvas.getContext('2d');
+
+        let atoms = [];
+        let atomCount = 100;
+        let halfLife = parseInt(halfLifeSlider.value);
+        let time = 0;
+        let remainingData = [];
+        const maxAtoms = atomCount;
+
+        // Обновляем значение полураспада
+        halfLifeSlider.addEventListener('input', () => {
+            halfLife = parseInt(halfLifeSlider.value);
+            halfLifeValue.textContent = halfLife;
+        });
+
+        // Создаём атомы
+        function createAtoms() {
+            atoms = [];
+            for (let i = 0; i < atomCount; i++) {
+                const atom = document.createElement('div');
+                atom.className = 'atom';
+                atom.style.left = Math.random() * (simulation.offsetWidth - 10) + 'px';
+                atom.style.top = Math.random() * (simulation.offsetHeight - 10) + 'px';
+                simulation.appendChild(atom);
+                atoms.push(atom);
+            }
+            remainingAtoms.textContent = atoms.length;
+        }
+
+        // Рисуем график
+        function drawGraph() {
+            ctx.clearRect(0, 0, graphCanvas.width, graphCanvas.height);
+            ctx.beginPath();
+            ctx.moveTo(0, graphCanvas.height);
+            for (let i = 0; i < remainingData.length; i++) {
+                const x = (i / remainingData.length) * graphCanvas.width;
+                const y = graphCanvas.height - (remainingData[i] / maxAtoms) * graphCanvas.height;
+                ctx.lineTo(x, y);
+            }
+            ctx.strokeStyle = '#4caf50';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
+
+        // Анимация распада атомов
+        function animateDecay() {
+            const decayRate = Math.log(2) / halfLife;
+            atoms = atoms.filter(atom => {
+                if (Math.random() < decayRate * 0.1) {
+                    simulation.removeChild(atom);
+                    return false;
+                }
+                return true;
+            });
+
+            remainingAtoms.textContent = atoms.length;
+            remainingData.push(atoms.length);
+
+            drawGraph();
+
+            if (atoms.length > 0) {
+                setTimeout(() => {
+                    time += 0.1;
+                    animateDecay();
+                }, 100);
+            }
+        }
+
+        // Перезапуск симуляции
+        resetButton.addEventListener('click', () => {
+            time = 0;
+            remainingData = [];
+            while (simulation.firstChild) {
+                simulation.removeChild(simulation.firstChild);
+            }
+            createAtoms();
+            animateDecay();
+        });
+
+        // Инициализация
+        createAtoms();
+        animateDecay();
+    </script>
+</body>
+</html>
